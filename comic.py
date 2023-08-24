@@ -4,15 +4,17 @@ class Comic():
     def __init__(self):
         pass
         
-    def setWebsite(self, website):
+    def getWebsite(self, website):
         website = website.strip()
-        if(website != "1" and website != "2"):
-            print("Website input should be 1 or 2")
-            return True
-        if(website == "1"): 
+        if("manganato" in website):
+            self.website = "Chapmanganato"
+        elif("mangakakalot" in website):
+            self.website = "Mangakakalot"
+        elif("mangakatana" in website):
             self.website = "Mangakatana"
         else:
-            self.website = "MangaKakalot"
+            print("Website should be Chapmanganato, Mangakakalot, or Mangakatana!")
+            return True
         return False
     
     def setRange(self, range):
@@ -26,6 +28,11 @@ class Comic():
             return True
         else:
             self.range = [match[1], match[3]]
+        try:
+            self.getChapters(self.res)
+        except:
+            print("Couldn't get chapters, try again!")
+            return True
         return False
     
     def setPath(self, path):
@@ -39,23 +46,19 @@ class Comic():
     
     def setLink(self, link):
         try: 
-            res = requests.get(link)
+            self.res = requests.get(link)
         except requests.exceptions.MissingSchema:
             print("Does not appear to be a link, try again!")
             return True
         if(not requests.codes.ok):
             print("Cannot connect to link, check and try again")
             return True
-        if("manganato" in link):
-            self.website = "Chapmanganato"
-        #try:
-        #   self.getTitle(res)
-        #    self.getChapters(res)
-        #except:
-        #   print("Cannot get chapters, check and try again")
-        #    return True
-        self.getTitle(res)
-        self.getChapters(res)
+        if(self.getWebsite(link)): return True
+        try:
+            self.getTitle(self.res)
+        except:
+            print("Cannot get title of website, check and try again")
+            return True
         self.link = link
         return False
     
@@ -111,6 +114,7 @@ class Comic():
     
     def print(self):
         print("You are downloading %s from chapters %0.2f-%0.2f" % (self.title, float(self.range[0]), float(self.range[1])))
-        print("Its path is %s" % self.path)
-        #for item in self.chapters:
-        #    print(item.string)
+        for item in self.chapters:
+            print(item.string)
+        print("Its path is at %s" % self.path)
+        print(self.chapNums)
