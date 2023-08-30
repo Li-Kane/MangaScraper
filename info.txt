@@ -1,0 +1,15 @@
+Chapmanganato, Mangabat
+    title: .story-info-right h1
+    chapters: .row-content-chapter .a-h a
+    imgs: .container-chapter-reader img
+    img src: src
+Mangakakalot
+    title: .manga-info-top .manga-info-text h1
+    chapters: .chapter-list .row a
+    imgs: .container-chapter-reader img
+    img src: src
+Mangakatana (Selenium)
+    title: #single_book .info .heading
+    chapters: .chapters .chapter a
+    imgs: #imgs .wrap_img img
+    img src: data-src

@@ -1,85 +1,52 @@
-import re, os, requests, bs4
+#!/usr/bin/env python3
+# comic.py - holds the Comic class which contains necessary values for scraping as gathered from
+# mangaScraper.py
 
+import re, os, requests, bs4
 class Comic():
     def __init__(self):
         pass
+
+    def setLink(self, link):
+        self.res = requests.get(link)
+        if(not requests.codes.ok): raise ValueError("Cannot connect to link, check and try again")
+        self.link = link
         
-    def getWebsite(self, website):
-        website = website.strip()
-        if("manganato" in website):
-            self.website = "Chapmanganato"
-        elif("mangakakalot" in website):
-            self.website = "Mangakakalot"
-        elif("mangakatana" in website):
-            self.website = "Mangakatana"
-        else:
-            print("Website should be Chapmanganato, Mangakakalot, or Mangakatana!")
-            return True
-        return False
+    def setSelectors(self, titleSelector, chapSelector, chapImgSelector, imageSource):
+        self.titleSelector = titleSelector
+        self.chapSelector = chapSelector
+        self.chapImgSelector = chapImgSelector
+        self.imageSource = imageSource
+        self.getTitle()
+    
+    def getTitle(self):
+        self.res.raise_for_status()
+        soup = bs4.BeautifulSoup(self.res.text, features='html.parser')
+        title = soup.select(self.titleSelector)
+        self.title = title[0].string
     
     def setRange(self, range):
         pattern = r"((\d*\.)?\d+)-((\d*\.)?\d+)"
         match = re.match(pattern, range)
         if(not match):
-            print("Range input should be in form num1-num1, ex. 2-5")
-            return True
+            raise ValueError("Range input should be in form num1-num1, ex. 2-5")
         elif(float(match[1]) > float(match[3])):
-            print("2nd number in range should be bigger than the first")
-            return True
+            raise ValueError("2nd number in range should be bigger than the first")
         else:
             self.range = [match[1], match[3]]
-        try:
-            self.getChapters(self.res)
-        except:
-            print("Couldn't get chapters, try again!")
-            return True
-        return False
     
-    def setPath(self, path):
-        try: 
-            os.makedirs(path, exist_ok=True)
-        except:
-            print("Path cannot be made")
-            return True
-        self.path = path
-        return False
-    
-    def setLink(self, link):
-        try: 
-            self.res = requests.get(link)
-        except requests.exceptions.MissingSchema:
-            print("Does not appear to be a link, try again!")
-            return True
-        if(not requests.codes.ok):
-            print("Cannot connect to link, check and try again")
-            return True
-        if(self.getWebsite(link)): return True
-        try:
-            self.getTitle(self.res)
-        except:
-            print("Cannot get title of website, check and try again")
-            return True
-        self.link = link
-        return False
-    
-    def getChapters(self, res):
-        res.raise_for_status()
-        soup = bs4.BeautifulSoup(res.text, features='html.parser')
+    def getChapters(self):
+        self.res.raise_for_status()
+        soup = bs4.BeautifulSoup(self.res.text, features='html.parser')
         #find Chapters
-        if(self.website == "Mangakatana"):
-            chapter = soup.select('.chapters .chapter a')
-        elif(self.website == "Chapmanganato"):
-            chapter = soup.select('.row-content-chapter .a-h a')
-        else:
-            chapter = soup.select('.chapter-list .row a')
+        chapter = soup.select(self.chapSelector)
         smallPattern = r"Chapter 0*" + self.range[0]
         bigPattern = r"Chapter 0*" + self.range[1]
         numPattern = r" ((\d*\.)?\d+)"
         smallNumIdx = [idx for idx, item in enumerate(chapter) if re.search(smallPattern, item.string)]
         bigNumIdx = [idx for idx, item in enumerate(chapter) if re.search(bigPattern, item.string)]
         if(smallNumIdx == [] or bigNumIdx == []):
-            print("Range bounds are not within the manga")
-            raise IndexError
+            raise IndexError("Range bounds are not within the manga chapters offerered")
         if(bigNumIdx[-1] == 0):
             self.chapters = chapter[smallNumIdx[-1]::-1]
         else:
@@ -87,34 +54,23 @@ class Comic():
         #get a list of numbers associated with each chapter obj in chapters
         chapNums = [re.search(numPattern, item.string) for item in self.chapters]
         self.chapNums = [item.group(1) for item in chapNums]
-        return False
     
-    def getTitle(self, res):
-        res.raise_for_status()
-        soup = bs4.BeautifulSoup(res.text, features='html.parser')
-        if(self.website == "Mangakatana"):
-            title = soup.select('#single_book .info .heading')
-        elif(self.website == "Chapmanganato"):
-            title = soup.select('.story-info-right h1')
-        else:
-            title = soup.select('.manga-info-top .manga-info-text h1')
-        self.title = title[0].string
+    def setPath(self, path):
+        os.makedirs(path, exist_ok=True)
+        self.path = path
 
-    def setCombine(self, combine):
-        ifCombine = combine.strip().lower()
-        if(ifCombine == "yes" or ifCombine == "y"):
-            self.combine = True
-            return False
-        elif(ifCombine == "no" or ifCombine=="n"):
-            self.combine = False
-            return False
+    def setScrapeMethod(self, method):
+        method = method.strip().lower()
+        if(method == "b" or method == "bs4"):
+            self.method = "B"
+        elif(method == "s" or method == "selenium"):
+            self.method = "S"
         else:
-            print("Please respond with yes or no")
-            return True
+            raise ValueError("Please respond with B or S")
     
     def print(self):
         print("You are downloading %s from chapters %0.2f-%0.2f" % (self.title, float(self.range[0]), float(self.range[1])))
+        print(self.chapNums)
         for item in self.chapters:
             print(item.string)
-        print("Its path is at %s" % self.path)
-        print(self.chapNums)
+        

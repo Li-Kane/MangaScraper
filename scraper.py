@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+#scraper.py - holds the functions used in each thread of mangaScraper.py
 import requests, os, bs4, time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -8,12 +10,11 @@ def downloadManga(startComic, endComic, comicObj):
         chapter = comicObj.chapters[number]
         url = chapter.get('href')
         print("Downloading page %s" % (url))
-        if(comicObj.website == "Mangakatana"):
-            comicElem = getImagesSelenium(url, '#imgs .wrap_img img')
-            source = 'data-src'
+        if(comicObj.method == "S"):
+            comicElem = getImagesSelenium(url, comicObj.chapImgSelector)
         else:
-            comicElem = getImagesBs4(url, '.container-chapter-reader img')
-            source = 'src'
+            comicElem = getImagesBs4(url, comicObj.chapImgSelector)
+        source = comicObj.imageSource
 
         os.makedirs('%s/%s/ch.%s' % (comicObj.path, comicObj.title, comicObj.chapNums[number]) , exist_ok=True)
         #find URL of img

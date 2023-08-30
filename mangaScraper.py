@@ -1,26 +1,38 @@
 #!/usr/bin/env python3
-# multidownloadXkcd.py - Downloads comics from manga websites
+# mangaScraper.py - Downloads comics from manga websites
 
 import threading
 import comic, scraper
 
 #Asks necessary questions
 comicData = comic.Comic()
-while(True):
-    print("Please give the link to the manga. Ex. https://mangakatana.com/manga/the-horizon.25833")
-    link = input()
-    if(comicData.setLink(link)): continue
-    print("Which chapters do you want to download? Give in form num1-num2, ex. 1-20 or 2.5-15.1")
-    chpRange = input()
-    if(comicData.setRange(chpRange)): continue
-    print("Please give the path to place the manga folder, as an absolute or relative path (it will overwrite folders)")
-    path = input()
-    if(comicData.setPath(path)): continue
-    comicData.print()
-    print("Do you want to merge images of a chapter together?")
-    merge = input()
-    if(comicData.setCombine(merge)): continue
-    break
+print("Please give the link to the manga. Ex. https://mangakatana.com/manga/the-horizon.25833")
+link = input()
+comicData.setLink(link)
+
+print("Please give the selector for the manga's title. For Mangakatana Ex: #single_book .info .heading")
+titleSelector = input()
+print("Please give the selector for the manga's chapter links. For Mangakatana Ex: .chapters .chapter a")
+chapLinksSelector = input()
+print("Please give the selector for the images in each chapter. For Mangakatana Ex: #imgs .wrap_img img")
+imgSelector = input()
+print("Do the images use data-src or src? (Try both if unsure)")
+imgSrc = input()
+comicData.setSelectors(titleSelector, chapLinksSelector, imgSelector, imgSrc)
+
+print("Which chapters do you want to download? Give in form num1-num2, ex. 1-20 or 2.5-15.1")
+chpRange = input()
+comicData.setRange(chpRange)
+comicData.getChapters()
+
+print("Please give the path to place the manga folder, as an absolute or relative path (it will overwrite folders)")
+path = input()
+comicData.setPath(path)
+
+print("Use bs4 or selenium to parse images (use Selenium if imgs are loaded by javascript)? B or S to choose.")
+scraperMethod = input()
+comicData.setScrapeMethod(scraperMethod)
+comicData.print()
 
 #Set variables and start download threads
 downloadThreads = []
@@ -36,8 +48,8 @@ elif(size < 100):
 else:
     stepSize = int(size/5)
 
+
 for i in range(0,size,stepSize):
-    pass
     downloadThread = threading.Thread(target = scraper.downloadManga, args=(i, i+stepSize, comicData))
     downloadThreads.append(downloadThread)
     downloadThread.start()
@@ -46,4 +58,3 @@ for i in range(0,size,stepSize):
 for downloadThread in downloadThreads:
     downloadThread.join()
 print('Done.')
-
